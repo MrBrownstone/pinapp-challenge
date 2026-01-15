@@ -1,9 +1,12 @@
 package com.pinapp.jnotifier.core;
 
+import com.pinapp.jnotifier.error.DeliveryException;
+import com.pinapp.jnotifier.error.JNotifierException;
 import com.pinapp.jnotifier.api.Message;
 import com.pinapp.jnotifier.api.NotificationProvider;
 import com.pinapp.jnotifier.api.NotificationsClient;
 import com.pinapp.jnotifier.api.SendResult;
+import com.pinapp.jnotifier.error.ValidationException;
 
 import java.util.Objects;
 
@@ -16,8 +19,21 @@ public final class DefaultNotificationsClient implements NotificationsClient {
 
     @Override
     public SendResult send(Message message) {
+        if (message == null) {
+            throw new ValidationException("message must not be null");
+        }
         NotificationProvider<? extends Message> provider = registry.getProvider(message.channel());
-        return deliverUnsafe(provider, message);
+        try {
+            return deliverUnsafe(provider, message);
+        } catch (JNotifierException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            String channel = message.channel().value();
+            throw new DeliveryException(
+                    "Delivery failed for channel: " + channel + " via provider: " + provider.name(),
+                    e
+            );
+        }
     }
 
     @SuppressWarnings("unchecked")

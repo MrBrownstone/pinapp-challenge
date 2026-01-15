@@ -1,5 +1,7 @@
 package com.pinapp.jnotifier.api;
 
+import com.pinapp.jnotifier.error.ValidationException;
+
 import java.util.regex.Pattern;
 
 public record EmailMessage(String from, String to, String subject, String body) implements Message {
@@ -8,13 +10,13 @@ public record EmailMessage(String from, String to, String subject, String body) 
 
     public EmailMessage {
         if (from == null || from.isBlank() || !EMAIL_PATTERN.matcher(from).matches()) {
-            throw new IllegalArgumentException("invalid from email");
+            throw new ValidationException("invalid from email");
         }
         if (to == null || to.isBlank() || !EMAIL_PATTERN.matcher(to).matches()) {
-            throw new IllegalArgumentException("invalid to email");
+            throw new ValidationException("invalid to email");
         }
         if (body == null || body.isBlank()) {
-            throw new IllegalArgumentException("body must not be blank");
+            throw new ValidationException("body must not be blank");
         }
     }
 

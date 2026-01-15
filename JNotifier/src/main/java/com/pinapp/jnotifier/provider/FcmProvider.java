@@ -3,6 +3,7 @@ package com.pinapp.jnotifier.provider;
 import com.pinapp.jnotifier.api.NotificationProvider;
 import com.pinapp.jnotifier.api.PushMessage;
 import com.pinapp.jnotifier.api.SendResult;
+import com.pinapp.jnotifier.error.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +15,7 @@ public final class FcmProvider implements NotificationProvider<PushMessage> {
     private final String projectId;
 
     public FcmProvider(String projectId) {
-        if (projectId == null || projectId.isBlank()) throw new IllegalArgumentException("projectId blank");
+        if (projectId == null || projectId.isBlank()) throw new ValidationException("projectId blank");
         this.projectId = projectId;
     }
 
@@ -35,4 +36,3 @@ public final class FcmProvider implements NotificationProvider<PushMessage> {
         return SendResult.accepted("FCM-" + UUID.randomUUID());
     }
 }
-

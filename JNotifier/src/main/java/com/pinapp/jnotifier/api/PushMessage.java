@@ -1,5 +1,7 @@
 package com.pinapp.jnotifier.api;
 
+import com.pinapp.jnotifier.error.ValidationException;
+
 import java.util.Map;
 
 public record PushMessage(
@@ -13,10 +15,10 @@ public record PushMessage(
     public static final ChannelKey CHANNEL = new ChannelKey("push");
 
     public PushMessage {
-        if (platform == null) throw new IllegalArgumentException("platform must not be null");
-        if (target == null) throw new IllegalArgumentException("target must not be null");
+        if (platform == null) throw new ValidationException("platform must not be null");
+        if (target == null) throw new ValidationException("target must not be null");
         if ((title == null || title.isBlank()) && (body == null || body.isBlank())) {
-            throw new IllegalArgumentException("either title or body must be provided");
+            throw new ValidationException("either title or body must be provided");
         }
         data = (data == null) ? Map.of() : Map.copyOf(data);
     }

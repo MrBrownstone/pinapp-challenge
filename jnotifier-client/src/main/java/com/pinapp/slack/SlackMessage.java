@@ -2,6 +2,7 @@ package com.pinapp.slack;
 
 import com.pinapp.jnotifier.api.ChannelKey;
 import com.pinapp.jnotifier.api.Message;
+import com.pinapp.jnotifier.error.ValidationException;
 
 public record SlackMessage(
         String from,
@@ -15,16 +16,16 @@ public record SlackMessage(
 
     public SlackMessage {
         if (workspaceId == null || workspaceId.isBlank()) {
-            throw new IllegalArgumentException("workspaceId must not be blank");
+            throw new ValidationException("workspaceId must not be blank");
         }
         if (workspaceChannel == null || workspaceChannel.isBlank()) {
-            throw new IllegalArgumentException("workspaceChannel must not be blank");
+            throw new ValidationException("workspaceChannel must not be blank");
         }
         if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException("username must not be blank");
+            throw new ValidationException("username must not be blank");
         }
         if (text == null || text.isBlank()) {
-            throw new IllegalArgumentException("text must not be blank");
+            throw new ValidationException("text must not be blank");
         }
     }
 

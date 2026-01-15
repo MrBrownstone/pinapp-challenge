@@ -3,6 +3,7 @@ package com.pinapp.jnotifier.provider;
 import com.pinapp.jnotifier.api.NotificationProvider;
 import com.pinapp.jnotifier.api.SendResult;
 import com.pinapp.jnotifier.api.SmsMessage;
+import com.pinapp.jnotifier.error.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +16,8 @@ public final class TwilioProvider implements NotificationProvider<SmsMessage> {
     private final String authToken;
 
     public TwilioProvider(String accountSid, String authToken) {
-        if (accountSid == null || accountSid.isBlank()) throw new IllegalArgumentException("accountSid blank");
-        if (authToken == null || authToken.isBlank()) throw new IllegalArgumentException("authToken blank");
+        if (accountSid == null || accountSid.isBlank()) throw new ValidationException("accountSid blank");
+        if (authToken == null || authToken.isBlank()) throw new ValidationException("authToken blank");
         this.accountSid = accountSid;
         this.authToken = authToken;
     }

@@ -3,6 +3,7 @@ package com.pinapp.jnotifier.provider;
 import com.pinapp.jnotifier.api.EmailMessage;
 import com.pinapp.jnotifier.api.NotificationProvider;
 import com.pinapp.jnotifier.api.SendResult;
+import com.pinapp.jnotifier.error.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +15,7 @@ public final class SendGridProvider implements NotificationProvider<EmailMessage
 
     public SendGridProvider(String apiKey) {
         if (apiKey == null || apiKey.isEmpty()) {
-            throw new IllegalArgumentException("API key must not be null or empty");
+            throw new ValidationException("API key must not be null or empty");
         }
         //SendGrid sg = new SendGrid(apiKey);
     }

@@ -3,6 +3,7 @@ package com.pinapp.jnotifier.provider;
 import com.pinapp.jnotifier.api.NotificationProvider;
 import com.pinapp.jnotifier.api.PushMessage;
 import com.pinapp.jnotifier.api.SendResult;
+import com.pinapp.jnotifier.error.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +15,7 @@ public final class ApnsProvider implements NotificationProvider<PushMessage> {
     private final String bundleId;
 
     public ApnsProvider(String bundleId) {
-        if (bundleId == null || bundleId.isBlank()) throw new IllegalArgumentException("bundleId blank");
+        if (bundleId == null || bundleId.isBlank()) throw new ValidationException("bundleId blank");
         this.bundleId = bundleId;
     }
 

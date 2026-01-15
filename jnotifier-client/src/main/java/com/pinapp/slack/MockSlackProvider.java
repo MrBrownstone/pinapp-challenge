@@ -2,6 +2,7 @@ package com.pinapp.slack;
 
 import com.pinapp.jnotifier.api.NotificationProvider;
 import com.pinapp.jnotifier.api.SendResult;
+import com.pinapp.jnotifier.error.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +14,7 @@ public final class MockSlackProvider implements NotificationProvider<SlackMessag
 
     public MockSlackProvider(String token) {
         if (token == null || token.isBlank()) {
-            throw new IllegalArgumentException("token must not be blank");
+            throw new ValidationException("token must not be blank");
         }
         this.token = token;
     }

@@ -1,10 +1,13 @@
 package com.pinapp.jnotifier.core;
 
 import com.pinapp.jnotifier.api.EmailMessage;
+import com.pinapp.jnotifier.error.DeliveryException;
+import com.pinapp.jnotifier.api.NotificationProvider;
 import com.pinapp.jnotifier.api.PushMessage;
 import com.pinapp.jnotifier.api.PushPlatform;
 import com.pinapp.jnotifier.api.PushToken;
 import com.pinapp.jnotifier.api.SendResult;
+import com.pinapp.jnotifier.error.ValidationException;
 import com.pinapp.jnotifier.provider.ApnsProvider;
 import com.pinapp.jnotifier.provider.CompositePushProvider;
 import com.pinapp.jnotifier.provider.FcmProvider;
@@ -69,5 +72,44 @@ public class DefaultNotificationsClientTest {
         assertEquals(SendResult.Status.ACCEPTED, iosResult.status());
         assertTrue(iosResult.providerMessageId().isPresent(), "ios providerMessageId should be present");
         assertTrue(iosResult.providerMessageId().get().startsWith("APNS-"), "ios provider id should start with APNS-");
+    }
+
+    @Test
+    void sendRejectsNullMessage() {
+        ProviderRegistry registry = new ProviderRegistry(Map.of(
+                EmailMessage.CHANNEL, new SendGridProvider("DUMMY_API_KEY")
+        ));
+        DefaultNotificationsClient client = new DefaultNotificationsClient(registry);
+
+        ValidationException ex = assertThrows(ValidationException.class, () -> client.send(null));
+        assertEquals("message must not be null", ex.getMessage());
+    }
+
+    @Test
+    void sendFailsWhenProviderMissing() {
+        ProviderRegistry registry = new ProviderRegistry(Map.of());
+        DefaultNotificationsClient client = new DefaultNotificationsClient(registry);
+
+        EmailMessage message = new EmailMessage("alice@example.com", "bob@example.com", "Greet", "Hello Bob");
+        DeliveryException ex = assertThrows(DeliveryException.class, () -> client.send(message));
+        assertTrue(ex.getMessage().contains("No provider registered for channel"));
+    }
+
+    @Test
+    void sendWrapsUnexpectedProviderRuntimeFailure() {
+        ProviderRegistry registry = new ProviderRegistry(Map.of(
+                EmailMessage.CHANNEL, new NotificationProvider<EmailMessage>() {
+                    @Override public String name() { return "boom-provider"; }
+                    @Override public SendResult deliver(EmailMessage message) {
+                        throw new RuntimeException("boom");
+                    }
+                }
+        ));
+        DefaultNotificationsClient client = new DefaultNotificationsClient(registry);
+
+        EmailMessage message = new EmailMessage("alice@example.com", "bob@example.com", "Greet", "Hello Bob");
+        DeliveryException ex = assertThrows(DeliveryException.class, () -> client.send(message));
+        assertTrue(ex.getMessage().contains("Delivery failed for channel"));
+        assertNotNull(ex.getCause());
     }
 }
