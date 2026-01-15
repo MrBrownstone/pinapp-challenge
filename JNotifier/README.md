@@ -12,7 +12,7 @@ each delivery attempt.
 - Push routing by platform (iOS/Android) via a composite provider.
 
 ## Core concepts
-- `Message`: common contract with `channel()`, `from()`, `to()`, `body()`.
+- `Message`: common contract with `channel()`, `body()`.
 - `NotificationProvider<M>`: delivers a specific message type.
 - `ProviderRegistry`: maps a `ChannelKey` to a provider.
 - `SendResult`: indicates `ACCEPTED`, `SENT`, `REJECTED`, or `FAILED`.
