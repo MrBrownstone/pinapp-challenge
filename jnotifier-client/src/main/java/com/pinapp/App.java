@@ -2,7 +2,6 @@ package com.pinapp;
 
 import com.pinapp.jnotifier.api.EmailMessage;
 import com.pinapp.jnotifier.api.Message;
-import com.pinapp.jnotifier.api.NotificationsClient;
 import com.pinapp.jnotifier.api.PushMessage;
 import com.pinapp.jnotifier.api.PushPlatform;
 import com.pinapp.jnotifier.api.PushToken;
@@ -19,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class App {
     private static final Logger log = LoggerFactory.getLogger(App.class);
@@ -43,7 +43,7 @@ public class App {
                 .register(PushMessage.CHANNEL, pushProvider)
                 .build();
 
-        NotificationsClient client = new DefaultNotificationsClient(registry);
+        DefaultNotificationsClient client = new DefaultNotificationsClient(registry);
 
         EmailMessage email = new EmailMessage(
                 "alice@example.com",
@@ -51,7 +51,7 @@ public class App {
                 "Welcome to Pinapp",
                 "Thanks for trying the notification library."
         );
-        sendAndLog(client, email, "email");
+        CompletableFuture<SendResult> emailFuture = sendAndLogAsync(client, email, "email");
 
         SmsMessage sms = new SmsMessage(
                 "+15551112222",
@@ -60,7 +60,7 @@ public class App {
                 "Your code is 123456",
                 "https://example.com/sms/status"
         );
-        sendAndLog(client, sms, "sms");
+        CompletableFuture<SendResult> smsFuture = sendAndLogAsync(client, sms, "sms");
 
         PushMessage androidPush = new PushMessage(
                 PushPlatform.ANDROID,
@@ -69,7 +69,7 @@ public class App {
                 "Pinapp push payload",
                 Map.of("campaign", "spring-2025", "tier", "gold")
         );
-        sendAndLog(client, androidPush, "push-android");
+        CompletableFuture<SendResult> androidFuture = sendAndLogAsync(client, androidPush, "push-android");
 
         PushMessage iosPush = new PushMessage(
                 PushPlatform.IOS,
@@ -78,23 +78,45 @@ public class App {
                 "Pinapp iOS payload",
                 Map.of("campaign", "spring-2025", "tier", "platinum")
         );
-        sendAndLog(client, iosPush, "push-ios");
+        CompletableFuture<SendResult> iosFuture = sendAndLogAsync(client, iosPush, "push-ios");
+
+        CompletableFuture.allOf(
+                emailFuture,
+                smsFuture,
+                androidFuture,
+                iosFuture
+        ).join();
     }
 
-    private static void sendAndLog(NotificationsClient client, Message message, String label) {
+    private static CompletableFuture<SendResult> sendAndLogAsync(
+            DefaultNotificationsClient client,
+            Message message,
+            String label
+    ) {
         log.info("\n{}\nSending {} message...\n{}\n{}",
                 SEPARATOR,
                 label,
                 SEPARATOR,
                 formatMessage(message)
         );
-        SendResult result = client.send(message);
-        log.info("Result: status={} id={} details={}\n{}",
-                result.status(),
-                result.providerMessageId().orElse("<none>"),
-                result.details().orElse("<none>"),
-                SEPARATOR
-        );
+        return client.sendAsync(message)
+                .whenComplete((result, error) -> {
+                    if (error != null) {
+                        log.error("Result ({}): status=error details={}\n{}",
+                                label,
+                                error.getMessage(),
+                                SEPARATOR
+                        );
+                        return;
+                    }
+                    log.info("Result ({}): status={} id={} details={}\n{}",
+                            label,
+                            result.status(),
+                            result.providerMessageId().orElse("<none>"),
+                            result.details().orElse("<none>"),
+                            SEPARATOR
+                    );
+                });
     }
 
     private static String formatMessage(Message message) {

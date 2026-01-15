@@ -9,6 +9,7 @@ import com.pinapp.jnotifier.api.SendResult;
 import com.pinapp.jnotifier.error.ValidationException;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 public final class DefaultNotificationsClient implements NotificationsClient {
     private final ProviderRegistry registry;
@@ -34,6 +35,10 @@ public final class DefaultNotificationsClient implements NotificationsClient {
                     e
             );
         }
+    }
+
+    public CompletableFuture<SendResult> sendAsync(Message message) {
+        return CompletableFuture.supplyAsync(() -> send(message));
     }
 
     @SuppressWarnings("unchecked")
