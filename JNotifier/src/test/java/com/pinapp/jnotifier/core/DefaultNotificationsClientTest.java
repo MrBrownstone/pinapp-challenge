@@ -15,6 +15,7 @@ import com.pinapp.jnotifier.provider.SendGridProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -111,5 +112,60 @@ public class DefaultNotificationsClientTest {
         DeliveryException ex = assertThrows(DeliveryException.class, () -> client.send(message));
         assertTrue(ex.getMessage().contains("Delivery failed for channel"));
         assertNotNull(ex.getCause());
+    }
+
+    @Test
+    void sendAsyncReturnsResultForValidMessage() {
+        SendGridProvider provider = new SendGridProvider("DUMMY_API_KEY");
+        EmailMessage message = new EmailMessage("alice@example.com", "bob@example.com", "Greet", "Hello Bob");
+
+        ProviderRegistry registry = new ProviderRegistry(Map.of(EmailMessage.CHANNEL, provider));
+        DefaultNotificationsClient client = new DefaultNotificationsClient(registry);
+
+        SendResult result = client.sendAsync(message).join();
+        assertEquals(SendResult.Status.ACCEPTED, result.status());
+        assertTrue(result.providerMessageId().isPresent(), "providerMessageId should be present");
+    }
+
+    @Test
+    void sendAsyncRejectsNullMessage() {
+        ProviderRegistry registry = new ProviderRegistry(Map.of(
+                EmailMessage.CHANNEL, new SendGridProvider("DUMMY_API_KEY")
+        ));
+        DefaultNotificationsClient client = new DefaultNotificationsClient(registry);
+
+        CompletionException ex = assertThrows(CompletionException.class, () -> client.sendAsync(null).join());
+        assertInstanceOf(ValidationException.class, ex.getCause());
+        assertEquals("message must not be null", ex.getCause().getMessage());
+    }
+
+    @Test
+    void sendAsyncFailsWhenProviderMissing() {
+        ProviderRegistry registry = new ProviderRegistry(Map.of());
+        DefaultNotificationsClient client = new DefaultNotificationsClient(registry);
+
+        EmailMessage message = new EmailMessage("alice@example.com", "bob@example.com", "Greet", "Hello Bob");
+        CompletionException ex = assertThrows(CompletionException.class, () -> client.sendAsync(message).join());
+        assertInstanceOf(DeliveryException.class, ex.getCause());
+        assertTrue(ex.getCause().getMessage().contains("No provider registered for channel"));
+    }
+
+    @Test
+    void sendAsyncWrapsUnexpectedProviderRuntimeFailure() {
+        ProviderRegistry registry = new ProviderRegistry(Map.of(
+                EmailMessage.CHANNEL, new NotificationProvider<EmailMessage>() {
+                    @Override public String name() { return "boom-provider"; }
+                    @Override public SendResult deliver(EmailMessage message) {
+                        throw new RuntimeException("boom");
+                    }
+                }
+        ));
+        DefaultNotificationsClient client = new DefaultNotificationsClient(registry);
+
+        EmailMessage message = new EmailMessage("alice@example.com", "bob@example.com", "Greet", "Hello Bob");
+        CompletionException ex = assertThrows(CompletionException.class, () -> client.sendAsync(message).join());
+        assertInstanceOf(DeliveryException.class, ex.getCause());
+        assertTrue(ex.getCause().getMessage().contains("Delivery failed for channel"));
+        assertNotNull(ex.getCause().getCause());
     }
 }
